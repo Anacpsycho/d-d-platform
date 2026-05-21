@@ -23,13 +23,16 @@ async function bootstrap() {
     }),
   );
 
-  // API prefix
-  app.setGlobalPrefix('api');
+  // API prefix (excludes /health endpoint)
+  app.setGlobalPrefix('api', {
+    exclude: ['health'],
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
   
   console.log(`🚀 Application is running on: http://localhost:${port}/api`);
+  console.log(`💚 Health check available at: http://localhost:${port}/health`);
 }
 
 bootstrap();

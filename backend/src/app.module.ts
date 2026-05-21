@@ -12,6 +12,7 @@ import { CombatModule } from './modules/combat/combat.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { NpcsModule } from './modules/npcs/npcs.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { NpcsModule } from './modules/npcs/npcs.module';
     MessagingModule,
     NpcsModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
 
