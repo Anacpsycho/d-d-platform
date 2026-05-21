@@ -1,0 +1,50 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist
+build
+*.tsbuildinfo
+
+# Tests
+coverage
+.nyc_output
+*.spec.ts
+*.e2e-spec.ts
+test
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+
+# Misc
+README.md
+.editorconfig
+.prettierrc
+.eslintrc.js
+tsconfig.build.json
+
+# Made with Bob
