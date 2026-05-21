@@ -1,0 +1,26 @@
+JavaScript Scripts Extracted from PDF
+============================================================
+
+AbilityScores: 39938 characters
+ClassSelection: 49544 characters
+DomParser: 9364 characters
+Functions0: 45114 characters
+Functions1: 414764 characters
+Functions2: 343633 characters
+Functions3: 170901 characters
+FunctionsImport: 149547 characters
+FunctionsResources: 55992 characters
+FunctionsSpells: 238288 characters
+Icons: 55155 characters
+Lists: 93686 characters
+ListsBackgrounds: 3729 characters
+ListsClasses: 151060 characters
+ListsCompanions: 15402 characters
+ListsCreatures: 163404 characters
+ListsFeats: 900 characters
+ListsGear: 46627 characters
+ListsMagicItems: 580719 characters
+ListsRaces: 20948 characters
+ListsSources: 1334 characters
+ListsSpells: 427487 characters
+Startup: 887 characters
