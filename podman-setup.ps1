@@ -218,11 +218,17 @@ Write-Host "   [OK] Nginx" -ForegroundColor Green
 # STEP 3: Preparazione
 Show-Progress "Preparazione ambiente" 3 6
 
-# Crea directory dati
-Write-Host "[SETUP] Directory dati..." -ForegroundColor Cyan
-New-Item -ItemType Directory -Force -Path ".\data\mongodb" | Out-Null
-New-Item -ItemType Directory -Force -Path ".\data\redis" | Out-Null
-Write-Host "   [OK] Directory create" -ForegroundColor Green
+# Crea volumi Podman
+Write-Host "[SETUP] Volumi Podman..." -ForegroundColor Cyan
+$mongoVolumeExists = podman volume ls --format "{{.Name}}" | Select-String -Pattern "^dnd-mongodb-data$" -Quiet
+if (-not $mongoVolumeExists) {
+    podman volume create dnd-mongodb-data | Out-Null
+}
+$redisVolumeExists = podman volume ls --format "{{.Name}}" | Select-String -Pattern "^dnd-redis-data$" -Quiet
+if (-not $redisVolumeExists) {
+    podman volume create dnd-redis-data | Out-Null
+}
+Write-Host "   [OK] Volumi creati" -ForegroundColor Green
 
 # Crea network
 Write-Host "[SETUP] Network..." -ForegroundColor Cyan
@@ -248,6 +254,7 @@ podman run -d `
     -e MONGO_INITDB_ROOT_USERNAME=admin `
     -e MONGO_INITDB_ROOT_PASSWORD=changeme123 `
     -e MONGO_INITDB_DATABASE=dnd `
+    -v dnd-mongodb-data:/data/db `
     docker.io/library/mongo:6
 
 Test-LastCommand "Avvio MongoDB fallito"
@@ -267,6 +274,7 @@ podman run -d `
     --name dnd-redis `
     --network dnd-network `
     -p 6379:6379 `
+    -v dnd-redis-data:/data `
     docker.io/library/redis:7-alpine redis-server --appendonly yes
 
 Test-LastCommand "Avvio Redis fallito"
