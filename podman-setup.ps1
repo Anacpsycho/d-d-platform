@@ -301,7 +301,7 @@ podman run -d `
     -e JWT_EXPIRES_IN=15m `
     -e REFRESH_TOKEN_EXPIRES_IN=7d `
     -e REDIS_URL=redis://dnd-redis:6379 `
-    -e CORS_ORIGIN=http://localhost `
+    -e CORS_ORIGIN="http://localhost:8080,http://localhost:8081,http://localhost:5173" `
     localhost/dnd-backend:latest
 
 Test-LastCommand "Avvio Backend fallito"
@@ -361,7 +361,7 @@ if ($nginxExists) {
 podman run -d `
     --name dnd-nginx `
     --network dnd-network `
-    -p 80:80 `
+    -p 8081:8081 `
     localhost/dnd-nginx:latest
 
 Test-LastCommand "Avvio Nginx fallito"
@@ -375,7 +375,9 @@ Write-Host "================================================================" -F
 Write-Host ""
 
 Write-Host "[INFO] Applicazione disponibile:" -ForegroundColor Cyan
-Write-Host "   http://localhost" -ForegroundColor Yellow
+Write-Host "   http://localhost:8081" -ForegroundColor Yellow
+Write-Host "   Frontend diretto: http://localhost:8080" -ForegroundColor Gray
+Write-Host "   Backend API: http://localhost:3000/api" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "[INFO] Container attivi:" -ForegroundColor Cyan
@@ -391,7 +393,7 @@ Write-Host ""
 
 $response = Read-Host "Aprire il browser? (s/n)"
 if ($response -eq "s" -or $response -eq "S") {
-    Start-Process "http://localhost"
+    Start-Process "http://localhost:8081"
 }
 
 Write-Host ""
