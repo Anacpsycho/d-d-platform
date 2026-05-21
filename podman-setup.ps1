@@ -2,26 +2,24 @@
 # Script completo per setup e avvio con Podman usando container singoli
 # D&D Character Sheet Application
 
-Write-Host ""
-Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║                                                            ║" -ForegroundColor Cyan
-Write-Host "║        🎲 D&D Character Sheet - Setup Podman 🎲           ║" -ForegroundColor Cyan
-Write-Host "║                                                            ║" -ForegroundColor Cyan
-Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
-Write-Host ""
-
-# Parametri
+# Parametri DEVONO essere la prima cosa nello script
 param(
     [switch]$Stop,
     [switch]$Check,
     [switch]$Clean
 )
 
+Write-Host ""
+Write-Host "================================================================" -ForegroundColor Cyan
+Write-Host "     D&D Character Sheet - Setup Podman" -ForegroundColor Cyan
+Write-Host "================================================================" -ForegroundColor Cyan
+Write-Host ""
+
 # Funzione per gestire errori
 function Test-LastCommand {
     param([string]$ErrorMessage)
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ ERRORE: $ErrorMessage" -ForegroundColor Red
+        Write-Host "[ERRORE] $ErrorMessage" -ForegroundColor Red
         exit 1
     }
 }
@@ -31,12 +29,12 @@ function Show-Progress {
     param([string]$Message, [int]$Step, [int]$Total)
     Write-Host ""
     Write-Host "[$Step/$Total] $Message" -ForegroundColor Yellow
-    Write-Host ("─" * 60) -ForegroundColor Gray
+    Write-Host ("=" * 60) -ForegroundColor Gray
 }
 
 # STOP: Ferma tutti i container
 if ($Stop) {
-    Write-Host "🛑 Arresto container..." -ForegroundColor Yellow
+    Write-Host "[STOP] Arresto container..." -ForegroundColor Yellow
     Write-Host ""
     
     $containers = @("dnd-nginx", "dnd-frontend", "dnd-backend", "dnd-redis", "dnd-mongodb")
@@ -57,13 +55,13 @@ if ($Stop) {
     }
     
     Write-Host ""
-    Write-Host "✅ Container fermati!" -ForegroundColor Green
+    Write-Host "[OK] Container fermati!" -ForegroundColor Green
     
     $response = Read-Host "Vuoi rimuovere anche i dati? (s/n)"
     if ($response -eq "s" -or $response -eq "S") {
         if (Test-Path ".\data") {
             Remove-Item -Recurse -Force ".\data"
-            Write-Host "✅ Dati rimossi!" -ForegroundColor Green
+            Write-Host "[OK] Dati rimossi!" -ForegroundColor Green
         }
     }
     exit 0
@@ -71,48 +69,48 @@ if ($Stop) {
 
 # CHECK: Verifica stato
 if ($Check) {
-    Write-Host "🔍 Verifica stato sistema..." -ForegroundColor Yellow
+    Write-Host "[CHECK] Verifica stato sistema..." -ForegroundColor Yellow
     Write-Host ""
     
     # Verifica Podman
-    Write-Host "1️⃣  Podman:" -ForegroundColor Cyan
+    Write-Host "1. Podman:" -ForegroundColor Cyan
     podman --version
     Write-Host ""
     
     # Verifica Network
-    Write-Host "2️⃣  Network:" -ForegroundColor Cyan
+    Write-Host "2. Network:" -ForegroundColor Cyan
     $networkExists = podman network ls --format "{{.Name}}" | Select-String -Pattern "^dnd-network$" -Quiet
     if ($networkExists) {
-        Write-Host "   ✅ dnd-network presente" -ForegroundColor Green
+        Write-Host "   [OK] dnd-network presente" -ForegroundColor Green
     } else {
-        Write-Host "   ❌ dnd-network mancante" -ForegroundColor Red
+        Write-Host "   [X] dnd-network mancante" -ForegroundColor Red
     }
     Write-Host ""
     
     # Verifica Container
-    Write-Host "3️⃣  Container:" -ForegroundColor Cyan
+    Write-Host "3. Container:" -ForegroundColor Cyan
     podman ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
     Write-Host ""
     
     # Verifica Immagini
-    Write-Host "4️⃣  Immagini:" -ForegroundColor Cyan
+    Write-Host "4. Immagini:" -ForegroundColor Cyan
     podman images | Select-String "dnd-"
     Write-Host ""
     
-    # Test connettività
-    Write-Host "5️⃣  Test Servizi:" -ForegroundColor Cyan
+    # Test connettivita
+    Write-Host "5. Test Servizi:" -ForegroundColor Cyan
     try {
         $response = Invoke-WebRequest -Uri "http://localhost:3000/health" -TimeoutSec 3 -UseBasicParsing -ErrorAction Stop
-        Write-Host "   ✅ Backend API - OK" -ForegroundColor Green
+        Write-Host "   [OK] Backend API - OK" -ForegroundColor Green
     } catch {
-        Write-Host "   ❌ Backend API - Non risponde" -ForegroundColor Red
+        Write-Host "   [X] Backend API - Non risponde" -ForegroundColor Red
     }
     
     try {
         $response = Invoke-WebRequest -Uri "http://localhost" -TimeoutSec 3 -UseBasicParsing -ErrorAction Stop
-        Write-Host "   ✅ Frontend - OK" -ForegroundColor Green
+        Write-Host "   [OK] Frontend - OK" -ForegroundColor Green
     } catch {
-        Write-Host "   ❌ Frontend - Non risponde" -ForegroundColor Red
+        Write-Host "   [X] Frontend - Non risponde" -ForegroundColor Red
     }
     
     exit 0
@@ -120,9 +118,9 @@ if ($Check) {
 
 # CLEAN: Pulizia completa
 if ($Clean) {
-    Write-Host "🗑️  Pulizia completa..." -ForegroundColor Yellow
+    Write-Host "[CLEAN] Pulizia completa..." -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "⚠️  ATTENZIONE: Questo rimuoverà:" -ForegroundColor Red
+    Write-Host "[!] ATTENZIONE: Questo rimuovera:" -ForegroundColor Red
     Write-Host "   - Tutti i container" -ForegroundColor Red
     Write-Host "   - Tutte le immagini" -ForegroundColor Red
     Write-Host "   - Tutti i dati" -ForegroundColor Red
@@ -150,66 +148,90 @@ if ($Clean) {
             Remove-Item -Recurse -Force ".\data"
         }
         
-        Write-Host "✅ Pulizia completata!" -ForegroundColor Green
+        Write-Host "[OK] Pulizia completata!" -ForegroundColor Green
     } else {
-        Write-Host "❌ Operazione annullata" -ForegroundColor Yellow
+        Write-Host "[X] Operazione annullata" -ForegroundColor Yellow
     }
     exit 0
 }
 
 # SETUP E AVVIO NORMALE
-Write-Host "🚀 Avvio setup completo..." -ForegroundColor Cyan
+Write-Host "[START] Avvio setup completo..." -ForegroundColor Cyan
 Write-Host ""
 
 # STEP 1: Verifica Podman
 Show-Progress "Verifica Podman" 1 6
 podman --version
 Test-LastCommand "Podman non installato. Scarica da: https://podman-desktop.io/"
-Write-Host "✅ Podman OK" -ForegroundColor Green
+
+# Verifica Podman machine
+Write-Host "[CHECK] Verifica Podman machine..." -ForegroundColor Cyan
+$machineStatus = podman machine list --format "{{.Running}}" 2>$null
+if ($machineStatus -ne "true") {
+    Write-Host "[!] Podman machine non in esecuzione" -ForegroundColor Yellow
+    Write-Host "[INFO] Avvio Podman machine..." -ForegroundColor Cyan
+    
+    # Verifica se esiste una machine
+    $machineExists = podman machine list --format "{{.Name}}" 2>$null
+    if (-not $machineExists) {
+        Write-Host "[INFO] Creazione Podman machine..." -ForegroundColor Cyan
+        podman machine init
+        Test-LastCommand "Creazione Podman machine fallita"
+    }
+    
+    Write-Host "[INFO] Avvio Podman machine (puo richiedere 1-2 minuti)..." -ForegroundColor Cyan
+    podman machine start
+    Test-LastCommand "Avvio Podman machine fallito"
+    
+    Write-Host "[OK] Podman machine avviata" -ForegroundColor Green
+    Start-Sleep -Seconds 5
+}
+
+Write-Host "[OK] Podman OK" -ForegroundColor Green
 
 # STEP 2: Build immagini
 Show-Progress "Build immagini (5-10 minuti)" 2 6
 
-Write-Host "📦 Backend..." -ForegroundColor Cyan
+Write-Host "[BUILD] Backend..." -ForegroundColor Cyan
 Set-Location backend
 podman build -t localhost/dnd-backend:latest -f Containerfile .
 Test-LastCommand "Build backend fallita"
 Set-Location ..
-Write-Host "   ✅ Backend" -ForegroundColor Green
+Write-Host "   [OK] Backend" -ForegroundColor Green
 
-Write-Host "📦 Frontend..." -ForegroundColor Cyan
+Write-Host "[BUILD] Frontend..." -ForegroundColor Cyan
 Set-Location frontend
 podman build -t localhost/dnd-frontend:latest -f Containerfile `
     --build-arg VITE_API_URL=http://localhost:3000 `
     --build-arg VITE_WS_URL=http://localhost:3000 .
 Test-LastCommand "Build frontend fallita"
 Set-Location ..
-Write-Host "   ✅ Frontend" -ForegroundColor Green
+Write-Host "   [OK] Frontend" -ForegroundColor Green
 
-Write-Host "📦 Nginx..." -ForegroundColor Cyan
+Write-Host "[BUILD] Nginx..." -ForegroundColor Cyan
 Set-Location nginx
 podman build -t localhost/dnd-nginx:latest -f Containerfile .
 Test-LastCommand "Build nginx fallita"
 Set-Location ..
-Write-Host "   ✅ Nginx" -ForegroundColor Green
+Write-Host "   [OK] Nginx" -ForegroundColor Green
 
 # STEP 3: Preparazione
 Show-Progress "Preparazione ambiente" 3 6
 
 # Crea directory dati
-Write-Host "📁 Directory dati..." -ForegroundColor Cyan
+Write-Host "[SETUP] Directory dati..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path ".\data\mongodb" | Out-Null
 New-Item -ItemType Directory -Force -Path ".\data\redis" | Out-Null
-Write-Host "   ✅ Directory create" -ForegroundColor Green
+Write-Host "   [OK] Directory create" -ForegroundColor Green
 
 # Crea network
-Write-Host "🌐 Network..." -ForegroundColor Cyan
+Write-Host "[SETUP] Network..." -ForegroundColor Cyan
 $networkExists = podman network ls --format "{{.Name}}" | Select-String -Pattern "^dnd-network$" -Quiet
 if (-not $networkExists) {
     podman network create dnd-network
     Test-LastCommand "Creazione network fallita"
 }
-Write-Host "   ✅ Network dnd-network" -ForegroundColor Green
+Write-Host "   [OK] Network dnd-network" -ForegroundColor Green
 
 # STEP 4: Avvio MongoDB
 Show-Progress "Avvio MongoDB" 4 6
@@ -230,7 +252,7 @@ podman run -d `
     docker.io/library/mongo:6
 
 Test-LastCommand "Avvio MongoDB fallito"
-Write-Host "✅ MongoDB avviato" -ForegroundColor Green
+Write-Host "[OK] MongoDB avviato" -ForegroundColor Green
 Write-Host "   Attendo inizializzazione..." -ForegroundColor Gray
 Start-Sleep -Seconds 10
 
@@ -250,7 +272,7 @@ podman run -d `
     docker.io/library/redis:7-alpine redis-server --appendonly yes
 
 Test-LastCommand "Avvio Redis fallito"
-Write-Host "✅ Redis avviato" -ForegroundColor Green
+Write-Host "[OK] Redis avviato" -ForegroundColor Green
 
 # STEP 6: Avvio Backend
 Show-Progress "Avvio Backend" 6 6
@@ -275,12 +297,12 @@ podman run -d `
     localhost/dnd-backend:latest
 
 Test-LastCommand "Avvio Backend fallito"
-Write-Host "✅ Backend avviato" -ForegroundColor Green
+Write-Host "[OK] Backend avviato" -ForegroundColor Green
 Write-Host "   Attendo inizializzazione..." -ForegroundColor Gray
 Start-Sleep -Seconds 15
 
 # Avvio Frontend
-Write-Host "📦 Frontend..." -ForegroundColor Cyan
+Write-Host "[START] Frontend..." -ForegroundColor Cyan
 $frontendExists = podman ps -a --format "{{.Names}}" | Select-String -Pattern "^dnd-frontend$" -Quiet
 if ($frontendExists) {
     podman stop dnd-frontend 2>$null
@@ -294,10 +316,10 @@ podman run -d `
     localhost/dnd-frontend:latest
 
 Test-LastCommand "Avvio Frontend fallito"
-Write-Host "   ✅ Frontend" -ForegroundColor Green
+Write-Host "   [OK] Frontend" -ForegroundColor Green
 
 # Avvio Nginx
-Write-Host "📦 Nginx..." -ForegroundColor Cyan
+Write-Host "[START] Nginx..." -ForegroundColor Cyan
 $nginxExists = podman ps -a --format "{{.Names}}" | Select-String -Pattern "^dnd-nginx$" -Quiet
 if ($nginxExists) {
     podman stop dnd-nginx 2>$null
@@ -311,28 +333,28 @@ podman run -d `
     localhost/dnd-nginx:latest
 
 Test-LastCommand "Avvio Nginx fallito"
-Write-Host "   ✅ Nginx" -ForegroundColor Green
+Write-Host "   [OK] Nginx" -ForegroundColor Green
 
 # SUCCESS
 Write-Host ""
-Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║              🎉 Setup Completato! 🎉                       ║" -ForegroundColor Green
-Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host "================================================================" -ForegroundColor Green
+Write-Host "              Setup Completato con Successo!" -ForegroundColor Green
+Write-Host "================================================================" -ForegroundColor Green
 Write-Host ""
 
-Write-Host "🌐 Applicazione disponibile:" -ForegroundColor Cyan
+Write-Host "[INFO] Applicazione disponibile:" -ForegroundColor Cyan
 Write-Host "   http://localhost" -ForegroundColor Yellow
 Write-Host ""
 
-Write-Host "📊 Container attivi:" -ForegroundColor Cyan
+Write-Host "[INFO] Container attivi:" -ForegroundColor Cyan
 podman ps --format "table {{.Names}}\t{{.Status}}"
 Write-Host ""
 
-Write-Host "🔧 Comandi utili:" -ForegroundColor Cyan
-Write-Host "   Verifica:  " -NoNewline; Write-Host ".\podman-setup.ps1 -Check" -ForegroundColor Yellow
-Write-Host "   Ferma:     " -NoNewline; Write-Host ".\podman-setup.ps1 -Stop" -ForegroundColor Yellow
-Write-Host "   Pulisci:   " -NoNewline; Write-Host ".\podman-setup.ps1 -Clean" -ForegroundColor Yellow
-Write-Host "   Logs:      " -NoNewline; Write-Host "podman logs -f dnd-backend" -ForegroundColor Yellow
+Write-Host "[INFO] Comandi utili:" -ForegroundColor Cyan
+Write-Host "   Verifica:  .\podman-setup.ps1 -Check" -ForegroundColor White
+Write-Host "   Ferma:     .\podman-setup.ps1 -Stop" -ForegroundColor White
+Write-Host "   Pulisci:   .\podman-setup.ps1 -Clean" -ForegroundColor White
+Write-Host "   Logs:      podman logs -f dnd-backend" -ForegroundColor White
 Write-Host ""
 
 $response = Read-Host "Aprire il browser? (s/n)"
@@ -341,6 +363,6 @@ if ($response -eq "s" -or $response -eq "S") {
 }
 
 Write-Host ""
-Write-Host "Buon gioco! 🎲" -ForegroundColor Green
+Write-Host "Buon gioco!" -ForegroundColor Green
 
 # Made with Bob
