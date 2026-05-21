@@ -247,6 +247,8 @@ if ($mongoExists) {
     podman rm dnd-mongodb 2>$null
 }
 
+# MongoDB con autenticazione e database 'dnd'
+# Il backend si connette a: mongodb://admin:changeme123@dnd-mongodb:27017/dnd?authSource=admin
 podman run -d `
     --name dnd-mongodb `
     --network dnd-network `
