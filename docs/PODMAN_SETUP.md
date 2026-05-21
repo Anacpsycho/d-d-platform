@@ -233,6 +233,97 @@ VITE_WS_URL=http://localhost:3000
 
 ⚠️ **IMPORTANTE**: Cambia la password in produzione!
 
+### 🗄️ Come Funziona il Database MongoDB
+
+**Avvio Automatico:**
+
+MongoDB viene avviato automaticamente dallo script [`podman-setup.ps1`](podman-setup.ps1:1). Non devi fare nulla manualmente!
+
+```powershell
+podman run -d `
+    --name dnd-mongodb `
+    --network dnd-network `
+    -p 27017:27017 `
+    -e MONGO_INITDB_ROOT_USERNAME=admin `
+    -e MONGO_INITDB_ROOT_PASSWORD=changeme123 `
+    -e MONGO_INITDB_DATABASE=dnd `
+    -v ${PWD}/data/mongodb:/data/db:Z `
+    docker.io/library/mongo:6
+```
+
+**Inizializzazione Automatica:**
+
+1. **Al primo avvio**, MongoDB crea automaticamente:
+   - L'utente amministratore `admin` con password `changeme123`
+   - Il database `dnd`
+   - Le directory per i dati persistenti in `./data/mongodb`
+
+2. **Il backend NestJS** si connette e crea automaticamente:
+   - Tutte le collections necessarie (users, characters, campaigns, sessions, ecc.)
+   - Gli indici per ottimizzare le performance
+   - Le validazioni degli schema
+
+**Non serve configurazione manuale!** Il database è pronto all'uso dopo il primo avvio dello script.
+
+**Verifica che MongoDB sia attivo:**
+
+```powershell
+# Controlla se il container è in esecuzione
+podman ps | Select-String "dnd-mongodb"
+
+# Controlla i logs
+podman logs dnd-mongodb
+
+# Accedi alla shell MongoDB
+podman exec -it dnd-mongodb mongosh -u admin -p changeme123
+```
+
+**Comandi utili in mongosh:**
+
+```javascript
+// Mostra tutti i database
+show dbs
+
+// Usa il database dnd
+use dnd
+
+// Mostra tutte le collections
+show collections
+
+// Conta gli utenti
+db.users.countDocuments()
+
+// Mostra tutti gli utenti
+db.users.find().pretty()
+
+// Mostra tutti i personaggi
+db.characters.find().pretty()
+
+// Mostra le campagne
+db.campaigns.find().pretty()
+
+// Esci
+exit
+```
+
+**Dati Persistenti:**
+
+- I dati sono salvati in `./data/mongodb/` sul tuo computer
+- Anche se fermi e riavvii i container, **i dati rimangono**
+- Per cancellare tutto: `.\podman-setup.ps1 -Clean`
+
+**Backup del Database:**
+
+```powershell
+# Backup completo
+podman exec dnd-mongodb mongodump --username admin --password changeme123 --authenticationDatabase admin --out /backup
+podman cp dnd-mongodb:/backup ./backup-$(Get-Date -Format 'yyyyMMdd')
+
+# Restore
+podman cp ./backup-20260521 dnd-mongodb:/backup
+podman exec dnd-mongodb mongorestore --username admin --password changeme123 --authenticationDatabase admin /backup
+```
+
 ---
 
 ## 🌐 Accesso
