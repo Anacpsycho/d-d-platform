@@ -328,26 +328,62 @@ Write-Host "   [OK] Frontend" -ForegroundColor Green
 
 # Attendi che backend sia pronto prima di avviare Nginx
 Write-Host "[WAIT] Attendo che backend sia pronto..." -ForegroundColor Cyan
+Write-Host "   Controllo logs backend..." -ForegroundColor Gray
+Start-Sleep -Seconds 3
+
+# Mostra ultimi log del backend
+podman logs --tail 20 dnd-backend
+
 $maxRetries = 30
 $retryCount = 0
 $backendReady = $false
 
 while ($retryCount -lt $maxRetries -and -not $backendReady) {
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:3000/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
-        if ($response.StatusCode -eq 200) {
-            $backendReady = $true
-            Write-Host "   [OK] Backend pronto!" -ForegroundColor Green
+    # Verifica se il container è in esecuzione e healthy
+    $containerStatus = podman inspect dnd-backend --format "{{.State.Status}}" 2>$null
+    
+    if ($containerStatus -eq "running") {
+        # Prova a fare la richiesta HTTP
+        try {
+            $response = Invoke-WebRequest -Uri "http://localhost:3000/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+            if ($response.StatusCode -eq 200) {
+                $backendReady = $true
+                Write-Host "   [OK] Backend pronto e risponde!" -ForegroundColor Green
+            }
+        } catch {
+            # Se Invoke-WebRequest fallisce, prova con curl se disponibile
+            try {
+                $curlTest = curl -s -o $null -w "%{http_code}" http://localhost:3000/health 2>$null
+                if ($curlTest -eq "200") {
+                    $backendReady = $true
+                    Write-Host "   [OK] Backend pronto (verificato con curl)!" -ForegroundColor Green
+                }
+            } catch {
+                # Ignora errore curl
+            }
         }
-    } catch {
+    }
+    
+    if (-not $backendReady) {
         $retryCount++
-        Write-Host "   Tentativo $retryCount/$maxRetries..." -ForegroundColor Gray
+        Write-Host "   Tentativo $retryCount/$maxRetries... (container: $containerStatus)" -ForegroundColor Gray
+        
+        # Ogni 10 tentativi mostra i log
+        if ($retryCount % 10 -eq 0) {
+            Write-Host "   Ultimi log backend:" -ForegroundColor Yellow
+            podman logs --tail 15 dnd-backend
+        }
+        
         Start-Sleep -Seconds 2
     }
 }
 
 if (-not $backendReady) {
-    Write-Host "[!] Backend non risponde, ma continuo..." -ForegroundColor Yellow
+    Write-Host "[!] Backend non risponde dopo $maxRetries tentativi" -ForegroundColor Red
+    Write-Host "[INFO] Se il backend risponde nel browser, ignora questo messaggio" -ForegroundColor Cyan
+    Write-Host "[INFO] Potrebbe essere un problema con PowerShell Invoke-WebRequest" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "[!] Continuo con l'avvio di Nginx..." -ForegroundColor Yellow
 }
 
 # Avvio Nginx
