@@ -14,8 +14,8 @@ RUN npm ci && \
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application using npx to ensure proper execution
+RUN npx nest build
 
 # Production stage
 FROM node:20-alpine

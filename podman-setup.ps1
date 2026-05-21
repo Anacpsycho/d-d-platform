@@ -248,7 +248,6 @@ podman run -d `
     -e MONGO_INITDB_ROOT_USERNAME=admin `
     -e MONGO_INITDB_ROOT_PASSWORD=changeme123 `
     -e MONGO_INITDB_DATABASE=dnd `
-    -v ${PWD}/data/mongodb:/data/db:Z `
     docker.io/library/mongo:6
 
 Test-LastCommand "Avvio MongoDB fallito"
@@ -268,7 +267,6 @@ podman run -d `
     --name dnd-redis `
     --network dnd-network `
     -p 6379:6379 `
-    -v ${PWD}/data/redis:/data:Z `
     docker.io/library/redis:7-alpine redis-server --appendonly yes
 
 Test-LastCommand "Avvio Redis fallito"
@@ -317,6 +315,30 @@ podman run -d `
 
 Test-LastCommand "Avvio Frontend fallito"
 Write-Host "   [OK] Frontend" -ForegroundColor Green
+
+# Attendi che backend sia pronto prima di avviare Nginx
+Write-Host "[WAIT] Attendo che backend sia pronto..." -ForegroundColor Cyan
+$maxRetries = 30
+$retryCount = 0
+$backendReady = $false
+
+while ($retryCount -lt $maxRetries -and -not $backendReady) {
+    try {
+        $response = Invoke-WebRequest -Uri "http://localhost:3000/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+        if ($response.StatusCode -eq 200) {
+            $backendReady = $true
+            Write-Host "   [OK] Backend pronto!" -ForegroundColor Green
+        }
+    } catch {
+        $retryCount++
+        Write-Host "   Tentativo $retryCount/$maxRetries..." -ForegroundColor Gray
+        Start-Sleep -Seconds 2
+    }
+}
+
+if (-not $backendReady) {
+    Write-Host "[!] Backend non risponde, ma continuo..." -ForegroundColor Yellow
+}
 
 # Avvio Nginx
 Write-Host "[START] Nginx..." -ForegroundColor Cyan
